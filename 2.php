@@ -27,11 +27,34 @@ function convertString(&$a, $b){
 
 try {
     
-    $a = "She saw murder, she saw killer.";
+    $a = "She saw murder, she saw killer. </br>";
     
     $b = "saw";
     
     convertString($a, $b);
+    
+} catch (Exception $ex) {
+    echo 'Error: ', $ex->getMessage(), "\n";
+}
+
+function mySortForKey(&$a, $b){
+    
+    if(!isset($a[$b])){
+        throw new Exception("Index does not exist: $b");
+    }
+    
+    asort($a[$b]);
+    
+    print_r($a);
+    
+}
+
+try {
+    
+    $array = [['a' => 2,'b' => 1],['a' => 1,'b' => 3]];
+    $index = 0;
+    
+    mySortForKey($array, $index);
     
 } catch (Exception $ex) {
     echo 'Error: ', $ex->getMessage(), "\n";
