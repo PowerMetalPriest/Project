@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1:3306
--- Время создания: Июн 15 2021 г., 13:49
+-- Время создания: Июн 16 2021 г., 14:16
 -- Версия сервера: 5.7.29
 -- Версия PHP: 7.1.33
 
@@ -64,7 +64,7 @@ CREATE TABLE `a_product` (
 --
 
 CREATE TABLE `a_property` (
-  `product` varchar(50) NOT NULL,
+  `product` int(10) UNSIGNED NOT NULL,
   `property` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -88,23 +88,18 @@ ALTER TABLE `a_price`
 -- Индексы таблицы `a_product`
 --
 ALTER TABLE `a_product`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `code` (`code`);
+
+--
+-- Индексы таблицы `a_property`
+--
+ALTER TABLE `a_property`
+  ADD PRIMARY KEY (`product`);
 
 --
 -- AUTO_INCREMENT для сохранённых таблиц
 --
-
---
--- AUTO_INCREMENT для таблицы `a_category`
---
-ALTER TABLE `a_category`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `a_price`
---
-ALTER TABLE `a_price`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `a_product`
@@ -120,13 +115,14 @@ ALTER TABLE `a_product`
 -- Ограничения внешнего ключа таблицы `a_category`
 --
 ALTER TABLE `a_category`
-  ADD CONSTRAINT `a_category_ibfk_1` FOREIGN KEY (`id`) REFERENCES `a_product` (`id`);
+  ADD CONSTRAINT `a_category_ibfk_1` FOREIGN KEY (`id`) REFERENCES `a_product` (`code`);
 
 --
 -- Ограничения внешнего ключа таблицы `a_product`
 --
 ALTER TABLE `a_product`
-  ADD CONSTRAINT `a_product_ibfk_1` FOREIGN KEY (`id`) REFERENCES `a_price` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `a_product_ibfk_1` FOREIGN KEY (`code`) REFERENCES `a_price` (`id`),
+  ADD CONSTRAINT `a_product_ibfk_2` FOREIGN KEY (`code`) REFERENCES `a_property` (`product`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
