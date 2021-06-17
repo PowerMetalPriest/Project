@@ -1,5 +1,7 @@
 <?php
 
+mb_internal_encoding("UTF-8");
+
 function convertString(&$a, $b){
     
     $count = substr_count($a, $b);
@@ -64,15 +66,22 @@ function importXml($a){
     
     $a = simplexml_load_file('xml.xml');
     
-    define('DB_HOST', 'localhost');
-    define('DB_USER', 'root');
-    define('DB_PASSWORD', 'root');
-    define('DB_NAME', 'test_samson');
+    $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
     
-    $db = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+    if($db->connect_errno){ 
+        echo 'Error: Unable to connect to database.';
+        exit();
+    }
     
-    if($db->connect_errno) exit('Error: Unable to connect to database.');
+    $code = $a->Товар['Код'];
+    $type = $a->Товар->Цена['Тип'];
+    $price = $a->Товар->Цена;
+    $c = $a->Товар->Разделы->Раздел;
     
-    
+    foreach($a->Товар['Название'] as $name){
+        
+        
+        
+    }
     
 }
