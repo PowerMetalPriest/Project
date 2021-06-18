@@ -62,26 +62,50 @@ try {
     echo 'Error: ', $ex->getMessage(), "\n";
 }
 
+$xml = simplexml_load_file('xml.xml');
+
 function importXml($a){
-    
-    $a = simplexml_load_file('xml.xml');
-    
+
     $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
     
     if($db->connect_errno){ 
-        echo 'Error: Unable to connect to database.';
-        exit();
+        die('Error: Unable to connect to database.');
     }
     
-    $code = $a->Товар['Код'];
-    $type = $a->Товар->Цена['Тип'];
-    $price = $a->Товар->Цена;
-    $c = $a->Товар->Разделы->Раздел;
-    
-    foreach($a->Товар['Название'] as $name){
+    foreach($p = [$a->Товар['Название'], $a->Товар['Код']] as $product){
         
+        $sql = "ISERT INTO a_product (product, code) VALUES ($product[0], $product[1])";
         
+        mysqli_query($db, $sql);
         
     }
+    
+    foreach($p = [$a->Товар->Цена['Тип'], $a->Товар->Цена] as $price){
+        
+        $sql = "ISERT INTO a_price (type, price) VALUES ($price[0], $price[1])";
+        
+        mysqli_query($db, $sql);
+        
+    }
+    
+    foreach($c = $a->Товар->Разделы->Раздел as $category){
+        
+        $sql = "ISERT INTO a_category (c_name) VALUES ($category)";
+        
+        mysqli_query($db, $sql);
+        
+    }
+    
+    foreach($p = $a->Товар->Свойства as $property){
+        
+        $sql = "ISERT INTO a_property (property) VALUES ($property)";
+        
+        mysqli_query($db, $sql);
+        
+    }
+    
+    mysqli_close($db);
     
 }
+
+importXml($xml);
