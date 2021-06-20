@@ -122,3 +122,27 @@ function importXml($a){
 }
 
 importXml($file);
+
+$code = '4';
+
+function exportXml($a, $b){
+    
+    $xml = simplexml_load_file($a) or die("Error: Cannot create object");
+
+    $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
+    
+    if($db->connect_errno){ 
+        die("Unable to connect to database: " . mysqli_connect_error());
+    }
+    
+    $sql = "SELECT id FROM a_category WHERE (c_code = $b)";
+    
+    $id = $db->query($sql);
+    
+    
+    
+    mysqli_close($db);
+    
+}
+
+exportXml($file, $code);
