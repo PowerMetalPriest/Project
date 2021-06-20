@@ -62,72 +62,65 @@ try {
     echo 'Error: ', $ex->getMessage(), "\n";
 }
 
-$xml = simplexml_load_file('xml.xml');
+$file = 'xml.xml';
 
 function importXml($a){
-
-    $link = mysqli_connect('localhost', 'root', 'root', 'test_samson');
     
-    if($link->connect_errno){ 
+    $xml = simplexml_load_file($a) or die("Error: Cannot create object");
+
+    $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
+    
+    if($db->connect_errno){ 
         die("Unable to connect to database: " . mysqli_connect_error());
     }
     
-    foreach($a->Товар['Название'] as $value){
+    var_dump($xml);
+    
+    foreach ($xml->children() as $row){
         
-        $sql = "INSETT TO a_product (product_name) VALUE ($value)";
+        $name = $row->Товар['Название'];
+        $code = $row->Товар['Код'];
+        $price_type = $row->Цена['Тип'];
+        $price = $row->Цена;
+        $property = $row->Свойства;
+        $category = $row->Раздеы->Раздел;
         
-        if (mysql_query($sql)){
-            echo "Товар $value has been added..." ;
+        $sql = "INSERT TO a_product (code, product_name) VALUES ($code, $name)";
+        
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$name $code has been added. </br>";
         }
-    }
-    
-    foreach($a->Товар['Код'] as $value){
         
-        $sql = "INSETT TO a_product (code) VALUE ($value)";
+        $sql = "INSERT TO a_price (type, price) VALUES ($price_type, $price)";
         
-        if (mysql_query($sql)){
-            echo "Код товара $value has been added..." ;
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$price has been added. </br>";
         } 
+        
+        $sql = "INSERT TO a_property (property) VALUES ($property)";
+        
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$property has been added. </br>";
+        }
+        
+        $sql = "INSERT TO a_category (c_name) VALUES ($category)";
+        
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$category has been added. </br>";
+        }
+        
     }
     
-    foreach($a->Товар->Цена['Тип'] as $value){
-        
-        $sql = "INSETT TO a_price (type) VALUE ($value)";
-        
-        if (mysql_query($sql)){
-            echo "Тип цены $value has been added..." ;
-        } 
-    }
-    
-    foreach($a->Товар->Цена as $value){
-        
-        $sql = "INSETT TO a_price (price) VALUE ($value)";
-        
-        if (mysql_query($sql)){
-            echo "Цена $value has been added..." ;
-        } 
-    }
-    
-    foreach($a->Товар->Свойства as $value){
-        
-        $sql = "INSETT TO a_property (property) VALUE ($value)";
-        
-        if (mysql_query($sql)){
-            echo "Свойства $value has been added..." ;
-        } 
-    }
-    
-    foreach($a->Товар->Разделы->Раздел as $value){
-        
-        $sql = "INSETT TO a_category (c_name) VALUE ($value)";
-        
-        if (mysql_query($sql)){
-            echo "Раздел $value has been added..." ;
-        } 
-    }
-    
-    mysqli_close($link);
+    mysqli_close($db);
     
 }
 
-importXml($xml);
+importXml($file);
