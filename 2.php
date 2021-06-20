@@ -74,8 +74,6 @@ function importXml($a){
         die("Unable to connect to database: " . mysqli_connect_error());
     }
     
-    var_dump($xml);
-    
     foreach ($xml->children() as $row){
         
         $name = $row->Товар['Название'];
