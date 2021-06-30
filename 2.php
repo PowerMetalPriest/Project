@@ -1,0 +1,169 @@
+<?php
+
+mb_internal_encoding("UTF-8");
+
+function convertString(&$a, $b){
+    
+    $count = substr_count($a, $b);
+    
+    if($count < 2){
+        throw new Exception("Too few substring occurrences: $count");
+    }
+    
+    $rev_b = strrev($b);
+    
+    $a = explode($b, $a, 2);
+    
+    $a[0] .= $b;
+    
+    $a[1] = explode($b, $a[1], 2);
+    
+    $a[1][0] .= $rev_b;
+    
+    $a[1] = implode('', $a[1]);
+    $a = implode('', $a);
+    
+    print_r($a);
+
+}
+
+try {
+    
+    $a = "She saw murder, she saw killer. </br>";
+    
+    $b = "saw";
+    
+    convertString($a, $b);
+    
+} catch (Exception $ex) {
+    echo 'Error: ', $ex->getMessage(), "\n";
+}
+
+function mySortForKey(&$a, $b){
+    
+    if(!isset($a[$b])){
+        throw new Exception("Index does not exist: $b");
+    }
+    
+    asort($a[$b]);
+    
+    print_r($a);
+    
+}
+
+try {
+    
+    $array = [['a' => 2,'b' => 1],['a' => 1,'b' => 3]];
+    $index = 0;
+    
+    mySortForKey($array, $index);
+    
+} catch (Exception $ex) {
+    echo 'Error: ', $ex->getMessage(), "\n";
+}
+
+$file = 'xml.xml';
+
+function importXml($a){
+    
+    $xml = simplexml_load_file($a) or die("Error: Cannot create object");
+
+    $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
+    
+    if($db->connect_errno){ 
+        die("Unable to connect to database: " . mysqli_connect_error());
+    }
+    
+    foreach ($xml->children() as $row){
+        
+        $name = $row->Товар['Название'];
+        $code = $row->Товар['Код'];
+        $price_type = $row->Цена['Тип'];
+        $price = $row->Цена;
+        $property = $row->Свойства;
+        $category = $row->Раздеы->Раздел;
+        
+        $sql = "INSERT TO a_product (code, product_name) VALUES ($code, $name)";
+        
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$name $code has been added. </br>";
+        }
+        
+        $sql = "INSERT TO a_price (type, price) VALUES ($price_type, $price)";
+        
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$price has been added. </br>";
+        } 
+        
+        $sql = "INSERT TO a_property (property) VALUES ($property)";
+        
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$property has been added. </br>";
+        }
+        
+        $sql = "INSERT TO a_category (c_name) VALUES ($category)";
+        
+        $result = mysqli_query($db, $sql);
+        
+        if(!empty($result)){
+            echo "$category has been added. </br>";
+        }
+        
+    }
+    
+    mysqli_close($db);
+    
+}
+
+importXml($file);
+
+$code = '4';
+
+function exportXml($a, $b){
+    
+    $xml = simplexml_load_file($a) or die("Error: Cannot create object");
+
+    $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
+    
+    if($db->connect_errno){ 
+        die("Unable to connect to database: " . mysqli_connect_error());
+    }
+    
+    $sql = "SELECT id FROM a_category WHERE (c_code = $b)";
+    
+    $id = $db->query($sql);
+    
+    foreach ($id as $value){
+        
+        $sql = "SELECT (product_name, code) FROM a_product WHERE (id = $value)";
+        $name = $db->query($sql);
+        
+        $xml->Товары->createElement("Товар['Название' => $name[0], 'Код' => $name[1]]");
+        
+        $sql = "SELECT (price, type) FROM a_price WHERE (id = $value)";
+        $price = $db->query($sql);
+        
+        $xml->Товары->Товар->createElement("Цена[$price[1]], $price[0]");
+        
+        $sql = "SELECT property FROM a_property WHERE (id = $value)";
+        $property = $db->query($sql);
+        
+        $xml->Товары->Товар->createElement("Свойство[$property]");
+        
+        $sql = "SELECT property FROM a_category WHERE (id = $value)";
+        $category = $db->query($sql);
+        
+        $xml->Товары->Товар->Разделы->createElement("Раздел[$category]");
+    }
+    
+    mysqli_close($db);
+    
+}
+
+exportXml($file, $code);
