@@ -139,7 +139,28 @@ function exportXml($a, $b){
     
     $id = $db->query($sql);
     
-    
+    foreach ($id as $value){
+        
+        $sql = "SELECT (product_name, code) FROM a_product WHERE (id = $value)";
+        $name = $db->query($sql);
+        
+        $xml->Товары->createElement("Товар['Название' => $name[0], 'Код' => $name[1]]");
+        
+        $sql = "SELECT (price, type) FROM a_price WHERE (id = $value)";
+        $price = $db->query($sql);
+        
+        $xml->Товары->Товар->createElement("Цена[$price[1]], $price[0]");
+        
+        $sql = "SELECT property FROM a_property WHERE (id = $value)";
+        $property = $db->query($sql);
+        
+        $xml->Товары->Товар->createElement("Свойство[$property]");
+        
+        $sql = "SELECT property FROM a_category WHERE (id = $value)";
+        $category = $db->query($sql);
+        
+        $xml->Товары->Товар->Разделы->createElement("Раздел[$category]");
+    }
     
     mysqli_close($db);
     
