@@ -64,6 +64,7 @@ try {
 
 $file = 'xml.xml';
 
+
 function importXml($a){
     
     $xml = simplexml_load_file($a) or die("Error: Cannot create object");
@@ -74,47 +75,61 @@ function importXml($a){
         die("Unable to connect to database: " . mysqli_connect_error());
     }
     
-    foreach ($xml->children() as $row){
+    $tagName = iconv('cp1251', 'utf-8', 'Название');
+    $tagCode = iconv('cp1251', 'utf-8', 'Код');
+    $tagType = iconv('cp1251', 'utf-8', 'Тип');
+    $tagProperty = iconv('cp1251', 'utf-8', 'Свойства');
+    
+    foreach ($xml->children() as $row) {
         
-        $name = $row->Товар['Название'];
-        $code = $row->Товар['Код'];
-        $price_type = $row->Цена['Тип'];
-        $price = $row->Цена;
-        $property = $row->Свойства;
-        $category = $row->Раздеы->Раздел;
+        $attributes = $row->attributes();
         
-        $sql = "INSERT TO a_product (code, product_name) VALUES ($code, $name)";
+        $name = $attributes[$tagName];
+        $code = $attributes[$tagCode];
         
-        $result = mysqli_query($db, $sql);
+        $sql = "INSERT INTO a_product (code, product_name) VALUES ('$code', '$name')";
         
-        if(!empty($result)){
-            echo "$name $code has been added. </br>";
-        }
+        $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
         
-        $sql = "INSERT TO a_price (type, price) VALUES ($price_type, $price)";
+        echo "$name, $code has been added. </br>";
         
-        $result = mysqli_query($db, $sql);
+        foreach($row->children() as $subRow){
+            
+            $subAttributes = $subRow->attributes();
+            
+            $type = $subAttributes[$tagType];
+            
+            if ($type !== NULL){ 
+                
+                $sql = "INSERT INTO a_price (type, price, code) VALUES ('$type', '$subRow', '$code')";
         
-        if(!empty($result)){
-            echo "$price has been added. </br>";
-        } 
+                $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
         
-        $sql = "INSERT TO a_property (property) VALUES ($property)";
-        
-        $result = mysqli_query($db, $sql);
-        
-        if(!empty($result)){
-            echo "$property has been added. </br>";
-        }
-        
-        $sql = "INSERT TO a_category (c_name) VALUES ($category)";
-        
-        $result = mysqli_query($db, $sql);
-        
-        if(!empty($result)){
-            echo "$category has been added. </br>";
-        }
-        
+                echo "$type, $subRow has been added. </br>";
+                
+            }else{
+                   
+                $subChild = $subRow->children();
+                
+                $tag = $subChild->getName();
+                $tagX = $subRow->getName();
+                    
+                if($tagX == $tagProperty){
+                    
+                    $property = $tag . ' ' . $subChild;
+                    $sql = "INSERT INTO a_property (code, property) VALUES ('$code', '$property')";
+                    $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+                    echo "$code, $property has been added. </br>";
+                        
+                }else{
+                        
+                    $sql = "INSERT INTO a_category (code, c_name) VALUES ('$code', '$subChild')";
+                    $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+                    echo "$code, $subChild has been added. </br>";
+                        
+                }
+            }
+        }    
     }
     
     mysqli_close($db);
@@ -122,6 +137,8 @@ function importXml($a){
 }
 
 importXml($file);
+
+
 
 $code = '4';
 
