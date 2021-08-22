@@ -97,40 +97,42 @@ function importXml($a){
             
             $subAttributes = $subRow->attributes();
             
-            $type = $subAttributes[$tagType];
+            $type = $subAttributes[$tagType];                
             
             if ($type !== NULL){ 
                 
                 $sql = "INSERT INTO a_price (type, price, code) VALUES ('$type', '$subRow', '$code')";
-        
                 $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
         
                 echo "$type, $subRow has been added. </br>";
+            }
                 
-            }else{
-                   
-                $subChild = $subRow->children();
+            foreach($subRow->children() as $subChild){
                 
                 $tag = $subChild->getName();
                 $tagX = $subRow->getName();
-                    
-                if($tagX == $tagProperty){
+                
+                if($tagX === $tagProperty){
                     
                     $property = $tag . ' ' . $subChild;
                     $sql = "INSERT INTO a_property (code, property) VALUES ('$code', '$property')";
                     $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+                
                     echo "$code, $property has been added. </br>";
-                        
+
                 }else{
                         
                     $sql = "INSERT INTO a_category (code, c_name) VALUES ('$code', '$subChild')";
                     $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+                
                     echo "$code, $subChild has been added. </br>";
-                        
+                    
                 }
-            }
-        }    
-    }
+            }        
+                
+        }
+    }    
+
     
     mysqli_close($db);
     
@@ -139,8 +141,9 @@ function importXml($a){
 importXml($file);
 
 
+$fileEx = 'export.xml';
 
-$code = '4';
+$cCode = 32;
 
 function exportXml($a, $b){
     
@@ -152,35 +155,34 @@ function exportXml($a, $b){
         die("Unable to connect to database: " . mysqli_connect_error());
     }
     
-    $sql = "SELECT id FROM a_category WHERE (c_code = $b)";
+    $id = $db->query("SELECT c_name FROM a_category WHERE id_category = $b");          
+    $c_name = $id->fetch_assoc(); 
     
-    $id = $db->query($sql);
+    var_dump($c_name[c_name]);
     
-    foreach ($id as $value){
+    $sql_c = $db->query("SELECT code FROM a_category WHERE c_name = '$c_name[c_name]'");
+    $code = $sql_c->fetch_assoc();
+    
+    var_dump($code[code]);
+    
+    $sql_n = $db->query("SELECT product_name FROM a_product WHERE code = $code[code]");
+    $name = $sql_n->fetch_assoc();
+    
+    var_dump($name[product_name]);
+    
+    $sql_price = $db->query("SELECT type, price FROM a_price WHERE code = $code[code]");
+    $price = $sql_price->fetch_assoc();
         
-        $sql = "SELECT (product_name, code) FROM a_product WHERE (id = $value)";
-        $name = $db->query($sql);
-        
-        $xml->Товары->createElement("Товар['Название' => $name[0], 'Код' => $name[1]]");
-        
-        $sql = "SELECT (price, type) FROM a_price WHERE (id = $value)";
-        $price = $db->query($sql);
-        
-        $xml->Товары->Товар->createElement("Цена[$price[1]], $price[0]");
-        
-        $sql = "SELECT property FROM a_property WHERE (id = $value)";
-        $property = $db->query($sql);
-        
-        $xml->Товары->Товар->createElement("Свойство[$property]");
-        
-        $sql = "SELECT property FROM a_category WHERE (id = $value)";
-        $category = $db->query($sql);
-        
-        $xml->Товары->Товар->Разделы->createElement("Раздел[$category]");
-    }
+    var_dump($price);
+    
+    $sql_property = $db->query("SELECT property FROM a_property WHERE code = $code[code]");
+    $property = $sql_property->fetch_assoc();
+    
+    var_dump($property);
     
     mysqli_close($db);
     
-}
+}   
 
-exportXml($file, $code);
+
+exportXml($fileEx, $cCode);
