@@ -128,8 +128,7 @@ function importXml($a){
                     echo "$code, $subChild has been added. </br>";
                     
                 }
-            }        
-                
+            }               
         }
     }    
 
@@ -143,11 +142,12 @@ importXml($file);
 
 $fileEx = 'export.xml';
 
-$cCode = 32;
+$cCode = 2;
 
 function exportXml($a, $b){
     
     $xml = simplexml_load_file($a) or die("Error: Cannot create object");
+    $newElement = new SimpleXMLElement($xml);
 
     $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
     
@@ -156,29 +156,23 @@ function exportXml($a, $b){
     }
     
     $id = $db->query("SELECT c_name FROM a_category WHERE id_category = $b");          
-    $c_name = $id->fetch_assoc(); 
+    $c_name = $id->fetch_assoc();
     
     var_dump($c_name[c_name]);
     
-    $sql_c = $db->query("SELECT code FROM a_category WHERE c_name = '$c_name[c_name]'");
-    $code = $sql_c->fetch_assoc();
-    
-    var_dump($code[code]);
-    
-    $sql_n = $db->query("SELECT product_name FROM a_product WHERE code = $code[code]");
-    $name = $sql_n->fetch_assoc();
-    
-    var_dump($name[product_name]);
-    
-    $sql_price = $db->query("SELECT type, price FROM a_price WHERE code = $code[code]");
-    $price = $sql_price->fetch_assoc();
+    foreach($db->query("SELECT code FROM a_category WHERE c_name = '$c_name[c_name]'") as $code){
         
-    var_dump($price);
-    
-    $sql_property = $db->query("SELECT property FROM a_property WHERE code = $code[code]");
-    $property = $sql_property->fetch_assoc();
-    
-    var_dump($property);
+        $sql = $db->query("SELECT product_name FROM a_product WHERE code = '$code[code]'");
+        $name = $sql->fetch_assoc();
+
+        $product = $newElement->addChild("Товар");
+        $product->addAttribute("Название", $name[name]);
+        $product->addAttribute("Код", $code[code]);
+        
+        var_dump($name);
+        var_dump($code);
+
+    }
     
     mysqli_close($db);
     
