@@ -147,7 +147,7 @@ $cCode = 2;
 function exportXml($a, $b){
     
     $xml = simplexml_load_file($a) or die("Error: Cannot create object");
-    $newElement = new SimpleXMLElement($xml);
+    $newElement = simplexml_load_string(file_get_contents($a)) or die("Error: Cannot create object");
 
     $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
     
@@ -158,8 +158,6 @@ function exportXml($a, $b){
     $id = $db->query("SELECT c_name FROM a_category WHERE id_category = $b");          
     $c_name = $id->fetch_assoc();
     
-    var_dump($c_name[c_name]);
-    
     foreach($db->query("SELECT code FROM a_category WHERE c_name = '$c_name[c_name]'") as $code){
         
         $sql = $db->query("SELECT product_name FROM a_product WHERE code = '$code[code]'");
@@ -169,8 +167,30 @@ function exportXml($a, $b){
         $product->addAttribute("Название", $name[name]);
         $product->addAttribute("Код", $code[code]);
         
-        var_dump($name);
-        var_dump($code);
+        foreach($db->query("SELECT type, price FROM a_price WHERE code = '$code[code]'") as $price){
+
+            $priceB = $product->addChild("Цена", $price[price]);
+            $priceB->addAttribute("Тип", $price[type]);
+            $priceM = $product->addChild("Цена", $price[price]);
+            $priceM->addAttribute("Тип", $price[type]);
+            
+        }
+        
+        $properties = $product->addChild("Свойства");
+        
+        foreach($db->query("SELECT property FROM a_property WHERE code = '$code[code]'") as $property){
+            
+            $productProperty = $properties->addChild("$property[property]");
+            
+        }
+        
+        $categories = $product->addChild("Разделы");
+        
+        foreach($db->query("SELECT c_name FROM a_category WHERE code = '$code[code]'") as $category){
+            
+            $categoryProduct = $categories->addChild("Раздел", $category[c_name]);
+            
+        }
 
     }
     
