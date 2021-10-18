@@ -23,7 +23,7 @@ function convertString(&$a, $b){
     $a[1] = implode('', $a[1]);
     $a = implode('', $a);
     
-    print_r($a);
+    return $a;
 
 }
 
@@ -47,7 +47,7 @@ function mySortForKey(&$a, $b){
     
     asort($a[$b]);
     
-    print_r($a);
+    return $a;
     
 }
 
@@ -62,14 +62,56 @@ try {
     echo 'Error: ', $ex->getMessage(), "\n";
 }
 
-$file = 'xml.xml';
+Class Datebase{
+    
+    private $link;
+    
+    public function __construct(){
+        
+        $this->connect();
+        
+    }
+    
+    private function connect(){
+        
+        $this->link = new PDO("mysql:host=localhost;dbname=test_samson;charset=utf8" , "root", "root");
+        
+        return $this;
+        
+    }
+    
+    public function execute($sql){
+        
+        $sth = $this->link->prepare($sql);
+        
+        return $sth->execute();
+        
+    }
+    
+    public function query($sql){
+        
+        $sth = $this->link->prepare($sql);
+        
+        $sth->execute();
+        
+        $result = $sth->fetchAll(PDO::FETCH_ASSOC);
+        
+        if($result === false){
+            return [];
+        }
+        
+        return $result;
+        
+    }   
+}
 
+$file = 'xml.xml';
 
 function importXml($a){
     
     $xml = simplexml_load_file($a) or die("Error: Cannot create object");
 
-    $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
+    $db = new Datebase();
     
     if($db->connect_errno){ 
         die("Unable to connect to database: " . mysqli_connect_error());
@@ -87,9 +129,7 @@ function importXml($a){
         $name = $attributes[$tagName];
         $code = $attributes[$tagCode];
         
-        $sql = "INSERT INTO a_product (code, product_name) VALUES ('$code', '$name')";
-        
-        $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+        $db->execute("INSERT INTO a_product (code, product_name) VALUES ('$code', '$name')");
         
         echo "$name, $code has been added. </br>";
         
@@ -97,90 +137,94 @@ function importXml($a){
             
             $subAttributes = $subRow->attributes();
             
-            $type = $subAttributes[$tagType];
+            $type = $subAttributes[$tagType];                
             
             if ($type !== NULL){ 
                 
-                $sql = "INSERT INTO a_price (type, price, code) VALUES ('$type', '$subRow', '$code')";
-        
-                $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+                $db->execute("INSERT INTO a_price (type, price, code) VALUES ('$type', '$subRow', '$code')");
         
                 echo "$type, $subRow has been added. </br>";
+            }
                 
-            }else{
-                   
-                $subChild = $subRow->children();
+            foreach($subRow->children() as $subChild){
                 
                 $tag = $subChild->getName();
                 $tagX = $subRow->getName();
-                    
-                if($tagX == $tagProperty){
+                
+                if($tagX === $tagProperty){
                     
                     $property = $tag . ' ' . $subChild;
-                    $sql = "INSERT INTO a_property (code, property) VALUES ('$code', '$property')";
-                    $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+                    $db->execute("INSERT INTO a_property (code, property) VALUES ('$code', '$property')");
+
                     echo "$code, $property has been added. </br>";
-                        
+
                 }else{
                         
-                    $sql = "INSERT INTO a_category (code, c_name) VALUES ('$code', '$subChild')";
-                    $result = mysqli_query($db, $sql) or die("Error: " . mysqli_error($db));
+                    $db->execute("INSERT INTO a_category (code, c_name) VALUES ('$code', '$subChild')");
+                
                     echo "$code, $subChild has been added. </br>";
-                        
+                    
                 }
-            }
-        }    
-    }
-    
-    mysqli_close($db);
-    
+            }               
+        }
+    }   
 }
 
 importXml($file);
 
+$fileEx = 'export.xml';
 
-
-$code = '4';
+$cCode = 7;
 
 function exportXml($a, $b){
     
     $xml = simplexml_load_file($a) or die("Error: Cannot create object");
+    $newElement = simplexml_load_string(file_get_contents($a)) or die("Error: Cannot create object");
 
-    $db = mysqli_connect('localhost', 'root', 'root', 'test_samson');
+    $db = new Datebase();
     
     if($db->connect_errno){ 
         die("Unable to connect to database: " . mysqli_connect_error());
     }
     
-    $sql = "SELECT id FROM a_category WHERE (c_code = $b)";
+    $c_name = $db->query("SELECT c_name FROM a_category WHERE id_category = $b");          
     
-    $id = $db->query($sql);
-    
-    foreach ($id as $value){
+    foreach($db->query("SELECT code FROM a_category WHERE c_name = '$c_name[c_name]'") as $code){
         
-        $sql = "SELECT (product_name, code) FROM a_product WHERE (id = $value)";
-        $name = $db->query($sql);
+        $name = $db->query("SELECT product_name FROM a_product WHERE code = '$code[code]'");
+
+        $product = $newElement->addChild("Товар");
+        $product->addAttribute("Название", $name[name]);
+        $product->addAttribute("Код", $code[code]);
         
-        $xml->Товары->createElement("Товар['Название' => $name[0], 'Код' => $name[1]]");
+        foreach($db->query("SELECT type, price FROM a_price WHERE code = '$code[code]'") as $price){
+
+            $priceB = $product->addChild("Цена", $price[price]);
+            $priceB->addAttribute("Тип", $price[type]);
+            $priceM = $product->addChild("Цена", $price[price]);
+            $priceM->addAttribute("Тип", $price[type]);
+            
+        }
         
-        $sql = "SELECT (price, type) FROM a_price WHERE (id = $value)";
-        $price = $db->query($sql);
+        $properties = $product->addChild("Свойства");
         
-        $xml->Товары->Товар->createElement("Цена[$price[1]], $price[0]");
+        foreach($db->query("SELECT property FROM a_property WHERE code = '$code[code]'") as $property){
+            
+            $productProperty = $properties->addChild("$property[property]");
+            
+        }
         
-        $sql = "SELECT property FROM a_property WHERE (id = $value)";
-        $property = $db->query($sql);
+        $categories = $product->addChild("Разделы");
         
-        $xml->Товары->Товар->createElement("Свойство[$property]");
-        
-        $sql = "SELECT property FROM a_category WHERE (id = $value)";
-        $category = $db->query($sql);
-        
-        $xml->Товары->Товар->Разделы->createElement("Раздел[$category]");
+        foreach($db->query("SELECT c_name FROM a_category WHERE code = '$code[code]'") as $category){
+            
+            $categoryProduct = $categories->addChild("Раздел", $category[c_name]);
+            
+        }
+
     }
     
-    mysqli_close($db);
-    
-}
+}   
 
-exportXml($file, $code);
+
+exportXml($fileEx, $cCode);
