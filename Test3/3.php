@@ -6,9 +6,9 @@ class newBase
     static private $count = 0;
     static private $arSetName = [];
     /**
-     * @param string $name
+     * @param string $name                                        //string?
      */
-    function __construct(int $name = 0) 
+    function __construct(string $name)                            //to string
     {
         if (empty($name)) {
             while (array_search(self::$count, self::$arSetName) != false) {
@@ -19,7 +19,7 @@ class newBase
         $this->name = $name;
         self::$arSetName[] = $this->name;
     }
-    public $name; //was private
+    protected $name;                                             //$name не может быть private
     /**
      * @return string
      */
@@ -27,21 +27,18 @@ class newBase
     {
         return '*' . $this->name  . '*';
     }
-    public $value; //was protected
+    protected $value;
     /**
      * @param mixed $value
      */
     public function setValue($value)
     {
-        if($value == false){                                                    //before version 8.0 give false
-            $value = "";
-        }
         $this->value = $value;
     }
     /**
      * @return string
      */
-    public function getSize()
+    public function getSize(): string                        //added string
     {
         $size = strlen(serialize($this->value));
         return strlen($size) + $size;
@@ -53,10 +50,10 @@ class newBase
     /**
      * @return string
      */
-    public function getSave(): string
+    public function getSave(): string                                        //added string type
     {
-        $value = serialize($value);                                             // N; serialize
-        return $this->name . ':' . sizeof($value) . ':' . $value;
+        $value = serialize($this->value);                                    //$value это значение что пришло?
+        return $this->name . ':' . strlen($value) . ':' . $value;            //sizeof($value) это должен быть массив но это строка
     }
     /**
      * @return newBase
@@ -69,7 +66,6 @@ class newBase
                 + strlen($arValue[1]) + 1), $arValue[1]));
     }
 }
-
 class newView extends newBase
 {
     private $type = null;
@@ -95,7 +91,7 @@ class newView extends newBase
     }
     private function setSize()
     {
-        if (is_subclass_of($this->value, "Test3\newView")) {
+        if (is_subclass_of($this->value, 'Test3\newView')) {                 //""->''
             $this->size = parent::getSize() + 1 + strlen($this->property);
         } elseif ($this->type == 'test') {
             $this->size = parent::getSize();
@@ -116,7 +112,7 @@ class newView extends newBase
     public function getName(): string
     {
         if (empty($this->name)) {
-            throw new Exception('The object doesn\'t have name');
+            throw new Exception("The object doesn't have name");              //''->""
         }
         return '"' . $this->name  . '": ';
     }
@@ -161,25 +157,35 @@ class newView extends newBase
     static public function load(string $value): newBase
     {
         $arValue = explode(':', $value);
-        
-        $info = substr($value, strlen($arValue[0]) + 1 + strlen($arValue[1]) + 1 + $arValue[1]);
-        
         return (new newBase($arValue[0]))
             ->setValue(unserialize(substr($value, strlen($arValue[0]) + 1
-                + strlen($arValue[1]) + 1)), $arValue[1])                       // unserialize need 2 elements, change ) placement
+                + strlen($arValue[1]) + 1), $arValue))                             //$arValue[1] must be array, string given
             ->setProperty(unserialize(substr($value, strlen($arValue[0]) + 1
-                + strlen($arValue[1]) + 1 + $arValue[1])))                      
+                + strlen($arValue[1]) + 1 + $arValue[1])))
             ;
     }
 }
+function gettype($value): string
+{
+    if (is_object($value)) {
+        $type = get_class($value);
+        do {
+            if (strpos($type, 'Test3\newBase') !== false) {      //infinity "\n"  ""->''
+                return 'test';
+            }
+        } while ($type = get_parent_class($type));
+    }
+    return gettype($value);
+}
+
 
 $obj = new newBase('12345');
 $obj->setValue('text');
 
-$obj2 = new \Test3\newView('9876');                                             // O in $name, __construct require int
-$obj2->setValue($obj->value);                                                   // $obj2 $value = all $obj info? or $obj2 $value must be = $obj->value? 
+$obj2 = new \Test3\newView('O9876');
+$obj2->setValue($obj);
 $obj2->setProperty('field');
-$obj2->getInfo();                                                               //cant load private
+$obj2->getInfo();
 
 $save = $obj2->getSave();
 
